@@ -201,7 +201,7 @@ struct CaptureReq {
 
 fn worker(rx: Receiver<Cmd>, tx: Sender<Ev>, live: Arc<Mutex<Option<LiveFrame>>>, ctx: eframe::egui::Context) {
     let mut cam: Option<Camera> = None;
-    // Dev aid: TURTLEFRAME_FAKE_CAMERA=/path/image.png adds a still-image "camera".
+    // Dev aid: TURTLEFRAME_FAKE_CAMERA=/path/image.png adds a still-image "Demo camera".
     let fake_path = std::env::var_os("TURTLEFRAME_FAKE_CAMERA").map(std::path::PathBuf::from);
     let mut fake: Option<RgbImage> = None;
     let mut seq: u64 = 0;
@@ -239,12 +239,12 @@ fn worker(rx: Receiver<Cmd>, tx: Sender<Ev>, live: Arc<Mutex<Option<LiveFrame>>>
                             let mut list: Vec<CamInfo> =
                                 l.into_iter().map(|i| CamInfo { name: i.human_name(), index: i.index().clone() }).collect();
                             if fake_path.is_some() {
-                                list.insert(0, CamInfo { name: "Fake camera".into(), index: CameraIndex::String("fake".into()) });
+                                list.insert(0, CamInfo { name: "Demo camera".into(), index: CameraIndex::String("fake".into()) });
                             }
                             send(Ev::List(list))
                         }
                         Err(_) if fake_path.is_some() => send(Ev::List(vec![CamInfo {
-                            name: "Fake camera".into(),
+                            name: "Demo camera".into(),
                             index: CameraIndex::String("fake".into()),
                         }])),
                         Err(e) => send(Ev::Error(format!("Listing cameras failed: {e}"))),
@@ -262,7 +262,7 @@ fn worker(rx: Receiver<Cmd>, tx: Sender<Ev>, live: Arc<Mutex<Option<LiveFrame>>>
                             match crate::imageops::load_rgb(fp) {
                                 Ok(img) => {
                                     let fmt = CameraFormat::new_from(img.w as u32, img.h as u32, FrameFormat::RAWRGB, 15);
-                                    send(Ev::Opened { name: "Fake camera".into(), format: fmt, formats: vec![fmt] });
+                                    send(Ev::Opened { name: "Demo camera".into(), format: fmt, formats: vec![fmt] });
                                     send(Ev::Controls(Vec::new()));
                                     fake = Some(img);
                                 }

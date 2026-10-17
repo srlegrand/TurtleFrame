@@ -2,6 +2,16 @@
 
 Pencil test and stop motion capture. Stills only, no sound, no video.
 
+![Scrubbing frame 2: previous frame in red, next frame in green](docs/screenshots/onion-scrub.png)
+
+Live view about to capture panel 4, previous frames in red:
+
+![Live view with onion skin](docs/screenshots/live-capture.png)
+
+Undistort on a phone photo of a storyboard page, 4 lines then flattened to A-series paper:
+
+![Storyboard photo before and after undistort](docs/screenshots/storyboard-before-after.png)
+
 ## Build
 
 No libclang or system dev packages needed: the Linux v4l2 bindings are pre-generated for x86_64, aarch64 and 32-bit ARM (`vendor/v4l2-sys-mit`). One executable.
@@ -18,7 +28,7 @@ Binary: `target/release/turtleframe` (`turtleframe.exe` on Windows).
 
 ## Downloads and automatic builds
 
-Every push to `main` builds all platforms in GitHub Actions (Actions tab, download from the run's artifacts). Pushing a tag such as `v0.1.0` also creates a Release with the archives attached.
+Every push to `main` builds all platforms in GitHub Actions and replaces the `latest` pre-release on the Releases page with the new archives. Pushing a tag such as `v0.2.0` creates a normal versioned Release.
 
 | Archive | Runs on |
 |---|---|
