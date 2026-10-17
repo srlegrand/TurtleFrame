@@ -1,0 +1,9 @@
+# Local copy of v4l2-sys-mit 0.3.0 (MIT, Christopher N. Hesse) with pre-generated
+# bindings, so building TurtleFrame does not need libclang / bindgen.
+[package]
+name = "v4l2-sys-mit"
+version = "0.3.0"
+edition = "2018"
+license = "MIT"
+description = "Raw v4l2 bindings (MIT licensed), pre-generated"
+build = "build.rs"

@@ -1,0 +1,121 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - name: windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: macos-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+          - name: macos-x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            no_test: true
+          # Raspberry Pi 3 / 4 / 5 / Zero 2 W on 64-bit Pi OS
+          - name: pi-aarch64
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            cross: true
+          # Raspberry Pi 2 / 3 on 32-bit Pi OS
+          - name: pi-armv7
+            os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            cross: true
+          # Raspberry Pi 1 / Zero / Zero W
+          - name: pi-armv6
+            os: ubuntu-latest
+            target: arm-unknown-linux-gnueabihf
+            cross: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install cross
+        if: matrix.cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      - name: Test (native)
+        if: ${{ !matrix.cross && !matrix.no_test }}
+        run: cargo test --target ${{ matrix.target }}
+
+      # Runs under QEMU; also checks the pre-generated v4l2 struct layouts for this target.
+      - name: Test (cross)
+        if: matrix.cross
+        run: cross test --target ${{ matrix.target }}
+
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist/turtleframe-${{ matrix.name }}
+          cp target/${{ matrix.target }}/release/turtleframe README.md dist/turtleframe-${{ matrix.name }}/
+          tar -C dist -czf dist/turtleframe-${{ matrix.name }}.tar.gz turtleframe-${{ matrix.name }}
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/turtleframe-${{ matrix.name }} | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/turtleframe.exe, README.md dist/turtleframe-${{ matrix.name }}/
+          Compress-Archive -Path dist/turtleframe-${{ matrix.name }} -DestinationPath dist/turtleframe-${{ matrix.name }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turtleframe-${{ matrix.name }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

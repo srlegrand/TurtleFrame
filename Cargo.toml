@@ -1,0 +1,24 @@
+[package]
+name = "turtleframe"
+version = "0.1.0"
+edition = "2021"
+description = "TurtleFrame: pencil test and stop motion capture"
+
+[dependencies]
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts", "x11", "wayland", "clipboard"] }
+nokhwa = { version = "0.10.11", default-features = false, features = ["input-native"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "unwind"
+
+[profile.dev]
+opt-level = 2
+
+# v4l2 bindings without libclang (see vendor/v4l2-sys-mit)
+[patch.crates-io]
+v4l2-sys-mit = { path = "vendor/v4l2-sys-mit" }
